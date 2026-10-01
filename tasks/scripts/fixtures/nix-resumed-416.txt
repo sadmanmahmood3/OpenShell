@@ -1,0 +1,7 @@
+warning: unable to download 'https://cache.nixos.org/nar/0gb22ka922pww95cjpldc54zkz3pj997b3i2z3kmpw3pf3k086d3.nar.zst': HTTP error 200 (curl error: Failed sending data to the peer); retrying from offset 12352024 in 8 ms (attempt 1/5)
+error: unable to download 'https://cache.nixos.org/nar/0gb22ka922pww95cjpldc54zkz3pj997b3i2z3kmpw3pf3k086d3.nar.zst': HTTP error 416
+error: path '/nix/store/c8gn0q3c5zs5l2faj74s92vqhbyfnvcq-perl-5.42.0' is required, but there is no substituter that can build it
+error: some references of path '/nix/store/6r0ivf0hsm8lmcs0cf38m2xsp9hb45jk-dpkg-1.23.7' could not be realised
+error: some references of path '/nix/store/hiw6ii978dc8s153v60fzy6myzqxymm7-git-2.55.0' could not be realised
+error: some references of path '/nix/store/4k5q96f6rpsczkvl8qbmlw2d2mkd8sxp-nix-shell-env' could not be realised
+error: some substitutes for the outputs of derivation '/nix/store/6vccxdfvhxs4v6vqpg9zqnwgijc4z37z-nix-shell-env.drv' failed (usually happens due to networking issues); try '--fallback' to build derivation from source

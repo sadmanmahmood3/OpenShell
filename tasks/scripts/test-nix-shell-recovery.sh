@@ -59,32 +59,21 @@ export PATH="$test_dir/bin:$PATH"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 check_case() {
   export TEST_SCENARIO="$1" TEST_CASE="$test_dir/$1"
-  export GITHUB_OUTPUT="$TEST_CASE/outputs"
   mkdir -p "$TEST_CASE"
   local status=0
-  bash "$script_dir/realize-nix-dev-shell.sh" "$TEST_CASE/logs" > "$TEST_CASE/console" 2>&1 || status=$?
+  bash "$script_dir/realize-nix-dev-shell.sh" > "$TEST_CASE/console" 2>&1 || status=$?
   [ "$status" -eq "$2" ] || fail "$1: expected exit $2, got $status"
   [ "$(cat "$TEST_CASE/count")" -eq "$3" ] || fail "$1: incorrect invocation count"
-  local attempt
-  for ((attempt=1; attempt<=$3; attempt++)); do
-    [ -f "$TEST_CASE/logs/attempt-$attempt.log" ] || fail "$1: missing attempt $attempt log"
-  done
-  [ "$(wc -l < "$TEST_CASE/logs/results.tsv" | tr -d ' ')" -eq "$3" ] || fail "$1: missing result statuses"
   if [ "$3" -gt 1 ]; then
-    grep -q 'retried=true' "$GITHUB_OUTPUT" || fail "$1: missing retry marker"
-    grep -q 'HTTP error 416' "$TEST_CASE/logs/attempt-1.log" || fail "$1: original failure lost"
-    local delay lower=10
+    grep -q 'HTTP error 416' "$TEST_CASE/console" || fail "$1: original failure lost"
+    local delay expected=10
     while read -r delay; do
-      [ "$delay" -ge "$lower" ] && [ "$delay" -lt "$((lower + 5))" ] || fail "$1: unbounded delay"
-      lower=30
+      [ "$delay" -eq "$expected" ] || fail "$1: incorrect delay"
+      expected=30
     done < "$TEST_CASE/delays"
     [ "$(wc -l < "$TEST_CASE/delays" | tr -d ' ')" -eq "$(( $3 - 1 ))" ] || fail "$1: incorrect sleep count"
   else
     [ ! -e "$TEST_CASE/delays" ] || fail "$1: unexpected delay"
-    [ ! -e "$GITHUB_OUTPUT" ] || fail "$1: unexpected retry marker"
-  fi
-  if [ "$2" -eq 0 ] && [ "$3" -gt 1 ]; then
-    grep -q 'recovered after' "$TEST_CASE/console" || fail "$1: recovery not reported"
   fi
   echo "PASS: $1"
 }
@@ -101,10 +90,9 @@ done
 check_case terminated 143 1
 
 export TEST_SCENARIO=cancel-backoff TEST_CASE="$test_dir/cancel-backoff"
-export GITHUB_OUTPUT="$TEST_CASE/outputs"
 mkdir -p "$TEST_CASE"
 status=0
-bash "$script_dir/realize-nix-dev-shell.sh" "$TEST_CASE/logs" > "$TEST_CASE/console" 2>&1 || status=$?
+bash "$script_dir/realize-nix-dev-shell.sh" > "$TEST_CASE/console" 2>&1 || status=$?
 [ "$status" -eq 143 ] || fail "cancellation during backoff hidden"
 [ "$(cat "$TEST_CASE/count")" -eq 1 ] || fail "cancellation during backoff retried"
 echo 'PASS: cancellation during backoff'
@@ -119,7 +107,7 @@ chmod +x "$test_dir/bin/tee"
 export TEST_SCENARIO=success TEST_CASE="$test_dir/log-sink-failure"
 mkdir -p "$TEST_CASE"
 status=0
-bash "$script_dir/realize-nix-dev-shell.sh" "$TEST_CASE/logs" > "$TEST_CASE/console" 2>&1 || status=$?
+bash "$script_dir/realize-nix-dev-shell.sh" > "$TEST_CASE/console" 2>&1 || status=$?
 [ "$status" -eq 9 ] || fail "log sink error hidden"
 [ "$(cat "$TEST_CASE/count")" -eq 1 ] || fail "log sink error retried"
 echo 'PASS: log sink failure'

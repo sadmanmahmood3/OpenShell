@@ -178,26 +178,12 @@ nix develop --command zizmor --offline --persona=regular --min-severity=high --n
 
 ## Nix development-shell download recovery
 
-`setup-rust` realizes the Nix development shell before restoring Rust caches.
-If a NAR download fails with HTTP 416 after resuming that same archive, setup
-retries `nix develop -c true` with a fresh transfer, up to three total attempts.
-It waits roughly 10 and 30 seconds between attempts and keeps successfully
-realized store paths. Nix's internal download retries remain enabled.
+`setup-rust` retries shell preparation only when a NAR download fails with HTTP
+416 after resuming that same archive. It allows three total attempts, waiting
+10 and 30 seconds between them. Other fatal errors stop setup; Cargo commands
+are not retried. Each attempt's output remains in the job log.
 
-Other fatal errors, including builder failures, hash mismatches, authentication
-failures and unknown diagnostics, stop setup immediately. Cargo build, test and
-verification commands run once. The existing job timeout bounds preparation.
-
-When preparation fails or needs recovery, the action uploads `nix-shell-*`
-diagnostic artifacts containing each attempt's output and exit status. A warning
-identifies recovered downloads. A failed preparation still fails the job and
-blocks dependent E2E suites; those skipped suites do not indicate test failures.
-
-Run the focused recovery tests without fetching any dependencies:
-
-```shell
-bash tasks/scripts/test-nix-shell-recovery.sh
-```
+Run the focused tests with `bash tasks/scripts/test-nix-shell-recovery.sh`.
 
 ## Run the security scans together
 

@@ -8,8 +8,8 @@ set -euo pipefail
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-log_dir="${1:?Usage: realize-nix-dev-shell.sh LOG_DIRECTORY}"
-mkdir -p "$log_dir"
+log_file="$(mktemp)"
+trap 'rm -f "$log_file"' EXIT
 
 retryable_resume_failure() {
   python3 - "$1" <<'PY'
@@ -49,31 +49,20 @@ PY
 
 for attempt in 1 2 3; do
   echo "Realizing Nix development shell (attempt $attempt/3)"
-  if nix --log-format raw develop -c true 2>&1 | tee "$log_dir/attempt-$attempt.log"; then
-    printf '%s\t%s\t%s\n' "$attempt" 0 success >> "$log_dir/results.tsv"
-    if [ "$attempt" -gt 1 ]; then
-      echo "::warning::Nix development shell recovered after $attempt attempts; see Nix shell diagnostics."
-    fi
+  if nix --log-format raw develop -c true 2>&1 | tee "$log_file"; then
     exit 0
   else
     statuses=("${PIPESTATUS[@]}")
   fi
   nix_status="${statuses[0]}"
-  # A broken diagnostic sink must not hide command output or report success.
+  # Classification requires the complete command output.
   if [ "${statuses[1]}" -ne 0 ]; then
     exit "${statuses[1]}"
   fi
-  printf '%s\t%s\t%s\n' "$attempt" "$nix_status" failed >> "$log_dir/results.tsv"
-  if [ "$nix_status" -ge 128 ] || [ "$attempt" -eq 3 ] || ! retryable_resume_failure "$log_dir/attempt-$attempt.log"; then
+  if [ "$nix_status" -ge 128 ] || [ "$attempt" -eq 3 ] || ! retryable_resume_failure "$log_file"; then
     exit "$nix_status"
   fi
   echo "::warning::Nix rejected a resumed NAR download with HTTP 416; retrying shell preparation with a fresh transfer."
-  if [ -n "${GITHUB_OUTPUT:-}" ]; then
-    echo "retried=true" >> "$GITHUB_OUTPUT"
-  fi
-  # Small jitter spreads simultaneous cold-runner recoveries. Nix's own
-  # transfer retries remain enabled inside each preparation attempt.
-  delay=$((10 + RANDOM % 5))
-  [ "$attempt" -eq 1 ] || delay=$((30 + RANDOM % 5))
-  sleep "$delay"
+  # Nix's internal download retries remain enabled within each attempt.
+  if [ "$attempt" -eq 1 ]; then sleep 10; else sleep 30; fi
 done

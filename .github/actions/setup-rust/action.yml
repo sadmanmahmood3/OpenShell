@@ -24,21 +24,8 @@ runs:
         echo "hash=$(nix hash file --type sha256 --base16 "$shell_drv")" >> "$GITHUB_OUTPUT"
 
     - name: Realize Nix development shell
-      id: realize
       shell: bash
-      run: |
-        log_dir="$(mktemp -d "$RUNNER_TEMP/nix-shell.XXXXXX")"
-        echo "logs=$log_dir" >> "$GITHUB_OUTPUT"
-        bash tasks/scripts/realize-nix-dev-shell.sh "$log_dir"
-
-    - name: Upload Nix shell diagnostics
-      if: ${{ always() && !cancelled() && steps.realize.outputs.logs != '' && (steps.realize.outcome == 'failure' || steps.realize.outputs.retried == 'true') }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-      with:
-        name: nix-shell-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-key }}-${{ github.run_attempt }}
-        path: ${{ steps.realize.outputs.logs }}
-        retention-days: 5
-        if-no-files-found: warn
+      run: bash tasks/scripts/realize-nix-dev-shell.sh
 
     - name: Cache Rust target and registry
       uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2

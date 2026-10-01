@@ -9,10 +9,9 @@ pub mod boundary_exec;
 pub mod boundary_io;
 mod boundary_server;
 pub mod child_env;
+pub mod container_log;
 #[cfg(target_os = "linux")]
 pub(crate) mod delegated;
-#[cfg(unix)]
-pub mod identity;
 #[cfg(target_os = "linux")]
 pub mod main_session;
 pub mod managed_children;

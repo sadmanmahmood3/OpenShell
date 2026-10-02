@@ -178,12 +178,9 @@ nix develop --command zizmor --offline --persona=regular --min-severity=high --n
 
 ## Nix development-shell download recovery
 
-`setup-rust` retries shell preparation only when a NAR download fails with HTTP
-416 after resuming that same archive. It allows three total attempts, waiting
-10 and 30 seconds between them. Other fatal errors stop setup; Cargo commands
-are not retried. Each attempt's output remains in the job log.
-
-Run the focused tests with `bash tasks/scripts/test-nix-shell-recovery.sh`.
+`setup-rust` retries `nix develop -c true` once if shell preparation fails.
+Both attempts use the normal job log; a second failure fails the step.
+Cargo build and test commands are not retried.
 
 ## Run the security scans together
 

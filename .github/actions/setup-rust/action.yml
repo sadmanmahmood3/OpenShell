@@ -25,7 +25,7 @@ runs:
 
     - name: Realize Nix development shell
       shell: bash
-      run: bash tasks/scripts/realize-nix-dev-shell.sh
+      run: nix develop -c true || nix develop -c true
 
     - name: Cache Rust target and registry
       uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2

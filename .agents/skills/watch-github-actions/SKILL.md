@@ -125,11 +125,9 @@ gh run list --json databaseId,status,headBranch,url --jq '.[] | {id: .databaseId
 
 ## View Job Logs
 
-For Nix setup failures, distinguish dependency fetching from compilation.
-`setup-rust` retries shell preparation only for an HTTP 416 following a resume
-of the same NAR download, with three total attempts maximum. Cargo commands are
-not retried. The job log contains each attempt's output and a warning on retry.
-Skipped dependent E2E suites are blocked coverage, not additional failing tests.
+`setup-rust` retries failed Nix shell preparation once. Inspect both attempts
+in the job log; Cargo commands are not retried. Skipped dependent E2E suites
+indicate blocked coverage.
 
 For `Trivy Changes`, inspect the `Resolve PR baseline` step for the base and head
 SHAs. PR runs compare the tested merge commit with its
